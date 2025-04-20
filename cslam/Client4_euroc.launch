@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="i" default="0"/>
+  <arg name="dist" default="0"/>
+  <arg name="cam" default="$(find ccmslam)/conf/Reachy/View_4_config.yaml"/>
+  <arg name="image_compressed" default="/cam4/image/compressed"/>
+  <arg name="image_raw" default="/cam4/image_raw"/>
+
+  <group ns="ccmslam">
+
+    <!-- Republish compressed image to raw -->
+    <node pkg="image_transport" type="republish" name="republish_image_4">
+      <param name="image_transport" value="compressed"/>
+      <remap from="in"  to="$(arg image_compressed)"/>
+      <remap from="out" to="$(arg image_raw)"/>
+    </node>
+
+    <!-- Static transform -->
+    <node pkg="tf" type="static_transform_publisher"
+          name="linkC4_broadcaster"
+          args="-100 300 5 -1.571 0 -2 world odomC4 100" />
+
+    <!-- SLAM client -->
+    <node pkg="ccmslam" type="ccmslamClientNode" name="ccmslamClientNode4"
+          args="$(find ccmslam)/conf/ORBvoc.txt $(arg cam)" output="screen">
+
+      <param name="~FrameId" type="string" value="odomC4" />
+      <param name="~ClientId" type="int" value="4" />
+      <param name="~TopicNameCamSub" type="string" value="$(arg image_raw)" />
+      <param name="~MapOutTopicName" type="string" value="MapOutClient4" />
+      <param name="~MapInTopicName" type="string" value="MapOutServer4" unless="$(arg dist)" />
+      <param name="~MapInTopicName" type="string" value="MapOutServer4Disturbed" if="$(arg dist)" />
+
+    </node>
+
+  </group>
+</launch>
